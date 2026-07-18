@@ -28,6 +28,15 @@ PDF Upload (one or more files) leads to Text Extraction using pdfplumber, then C
 - Source transparency: every answer shows which document and chunk it came from
 - Graceful fallback: if the answer isn't in the document(s), the bot says so instead of guessing
 - Session-based: no data is stored beyond your browser session; nothing persists after you close the tab
+- 
+## Embedding Fine-Tuning Experiment
+
+Beyond the core RAG pipeline, the retrieval component was fine-tuned as a follow-up experiment: auto-generated 664 question-chunk training pairs from a project report using Groq, then fine-tuned all-MiniLM-L6-v2 with Multiple Negatives Ranking Loss. Evaluated with recall@3 on a held-out validation set:
+
+- Same-document retrieval accuracy: 51% → 81%
+- Cross-document (unseen document) accuracy: 90% → 100%
+
+Full methodology, results, and caveats are documented in the build notebook and project write-up.
 
 ## Possible extensions
 
