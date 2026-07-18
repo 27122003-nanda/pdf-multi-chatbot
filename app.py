@@ -1,6 +1,6 @@
 import streamlit as st
 import pdfplumber
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from sentence_transformers import SentenceTransformer
 import faiss
 import numpy as np
@@ -32,17 +32,17 @@ def process_pdf(uploaded_file):
             page_text = page.extract_text()
             if page_text:
                 text += page_text + "\n"
-    
+
     if len(text.strip()) < 20:
         return None, "⚠️ Couldn't extract readable text (possibly a scanned PDF)."
-    
+
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = splitter.split_text(text)
-    
+
     embeddings = embed_model.encode(chunks).astype('float32')
     index = faiss.IndexFlatL2(embeddings.shape[1])
     index.add(embeddings)
-    
+
     return {"chunks": chunks, "index": index}, None
 
 def retrieve_balanced(query, per_doc_k=2):
@@ -58,7 +58,7 @@ def retrieve_balanced(query, per_doc_k=2):
 def ask_question(query, per_doc_k=2):
     retrieved = retrieve_balanced(query, per_doc_k)
     context = "\n\n".join([f"[From {src}]: {chunk}" for chunk, src in retrieved])
-    
+
     prompt = f"""Answer the question based only on the context below. Mention which document(s) the answer comes from if relevant.
 If the answer isn't in the context, say "I couldn't find that in the document(s)." Do not make up information.
 
@@ -68,7 +68,7 @@ Context:
 Question: {query}
 
 Answer:"""
-    
+
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
@@ -83,7 +83,7 @@ st.caption("Upload PDFs and ask questions across all of them.")
 with st.sidebar:
     st.header("📂 Documents")
     uploaded_files = st.file_uploader("Upload PDF(s)", type="pdf", accept_multiple_files=True)
-    
+
     if uploaded_files:
         for f in uploaded_files:
             if f.name not in st.session_state.doc_cache:
@@ -93,7 +93,7 @@ with st.sidebar:
                         st.error(f"{f.name}: {error}")
                     else:
                         st.session_state.doc_cache[f.name] = data
-    
+
     if st.session_state.doc_cache:
         st.write("**Loaded documents:**")
         for fname in list(st.session_state.doc_cache.keys()):
@@ -122,7 +122,7 @@ if query:
         st.session_state.messages.append({"role": "user", "content": query})
         with st.chat_message("user"):
             st.write(query)
-        
+
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 answer, sources = ask_question(query)
@@ -131,5 +131,5 @@ if query:
                     for i, (chunk, src) in enumerate(sources):
                         st.markdown(f"**[{i+1}] from {src}**")
                         st.text(chunk[:300] + "...")
-        
+
         st.session_state.messages.append({"role": "assistant", "content": answer})
