@@ -1,0 +1,8 @@
+streamlit
+pdfplumber
+langchain
+langchain-community
+sentence-transformers
+faiss-cpu
+groq
+numpy
